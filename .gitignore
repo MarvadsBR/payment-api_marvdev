@@ -1,0 +1,46 @@
+## Build output
+bin/
+obj/
+
+## User-specific files
+*.rsuser
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.swp
+
+## VS / Rider
+.vs/
+.idea/
+*.DotSettings.user
+
+## Publish
+publish/
+out/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Logs
+*.log
+logs/
+
+## Environment / secrets
+.env
+.env.*
+appsettings.Local.json
+appsettings.*.Local.json
+
+## Docker
+docker-override.yml
