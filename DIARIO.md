@@ -11,7 +11,7 @@
 |---|---|
 | Repositório Git local | ✅ Inicializado (`main`) |
 | Remote GitHub | ✅ Configurado (`MarvadsBR/payment-api_marvdev`) |
-| Último commit local | `cf29fd4` — `ci: add GitHub Actions CI pipeline` (01/05/2026) |
+| Último commit local | `fdfa1fe` — `ci: atualizar actions para versoes com Node.js 24 nativo` (01/05/2026) |
 | Push para GitHub | ✅ **Realizado em 01/05/2026** |
 
 ---
@@ -337,4 +337,109 @@ on:
 
 ---
 
-## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 21:00)
+## Sessão 6 — 01/05/2026 às 21:30 · Commit `a62bce2`
+
+### Problema identificado: Warning de depreciação do Node.js 20 no GitHub Actions
+
+Após o primeiro push da pipeline de CI (Sessão 5), o runner exibiu o seguinte aviso:
+
+```
+Node.js 20 actions are deprecated. Please update the following actions to use
+Node.js 24: actions/checkout@v4, actions/setup-dotnet@v4.
+Deprecated actions will be removed on 16 September 2026.
+```
+
+O aviso aparecia porque `actions/checkout@v4` e `actions/setup-dotnet@v4` usam Node.js 20 internamente, que está marcado para remoção dos runners do GitHub em 16/09/2026.
+
+### Solução aplicada (paliativa)
+
+Adicionada variável de ambiente global no `ci.yml` para forçar o runtime JavaScript a usar Node.js 24:
+
+```yaml
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+```
+
+> **Nota:** esta solução suprimia parcialmente o warning mas não resolvia a causa raiz, pois as actions `@v4` continuam com código compilado para Node.js 20. A correção definitiva foi aplicada na Sessão 7.
+
+### Commits
+
+- [x] `a62bce2` — `ci: add FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 to suppress Node.js 20 warning` (01/05/2026 às 21:30)
+
+### Push realizado: ✅
+
+---
+
+## Sessão 7 — 01/05/2026 às 22:00 · Commit `fdfa1fe`
+
+### Problema resolvido: Depreciação do Node.js 20 nas actions do CI (correção definitiva)
+
+A variável `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` adicionada na Sessão 6 não eliminava o warning porque as actions `@v4` são distribuídas com código JavaScript compilado para Node.js 20 — o runtime é definido internamente, não pela variável de ambiente do runner.
+
+**Causa raiz:** `actions/checkout@v4` e `actions/setup-dotnet@v4` usam Node.js 20 em seu `action.yml`. A única correção real é atualizar para versões que declaram Node.js 24 nativamente.
+
+### Pesquisa realizada
+
+Consultadas as páginas de releases oficiais no GitHub:
+
+| Action | Versão com Node.js 24 | Data de lançamento |
+|---|---|---|
+| `actions/checkout` | `v5.0.0` em diante (latest: `v6.0.2`) | nov/2025 |
+| `actions/setup-dotnet` | `v5.0.0` em diante (latest: `v5.2.0`) | set/2025 |
+
+### Alterações realizadas
+
+**Arquivo:** `.github/workflows/ci.yml`
+
+| O que mudou | Antes | Depois |
+|---|---|---|
+| `actions/checkout` | `@v4` (Node.js 20) | `@v6` (Node.js 24 nativo) |
+| `actions/setup-dotnet` | `@v4` (Node.js 20) | `@v5` (Node.js 24 nativo) |
+| `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` | presente como workaround | **removida** (não mais necessária) |
+| Comentários inline | sem referência a Node | comentários explicando a versão e data |
+
+**Estado final do `ci.yml` após a correção:**
+
+```yaml
+- name: Checkout do código
+  uses: actions/checkout@v6   # Node.js 24 nativo (lançado nov/2025)
+
+- name: Configurar .NET 8
+  uses: actions/setup-dotnet@v5  # Node.js 24 nativo (lançado set/2025)
+  with:
+    dotnet-version: '8.0.x'
+```
+
+### Lição aprendida
+
+> `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` é um paliativo de curto prazo fornecido pelo GitHub para suprimir o aviso durante o período de transição. Não substitui a atualização das versões das actions. Ao atualizar para versões que usam Node.js 24 internamente, a variável torna-se desnecessária e deve ser removida para manter o arquivo limpo.
+
+### Commits
+
+- [x] `fdfa1fe` — `ci: atualizar actions para versoes com Node.js 24 nativo` (01/05/2026 às 22:00)
+
+### Push realizado: ✅
+
+---
+
+## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 22:00)
+
+### ✅ Resolvido
+
+- [x] ~~Credenciais em texto puro no `docker-compose.yml`~~ — resolvido em 01/05/2026 às 20:08
+- [x] ~~`UpdatePaymentStatusDto` sem validação de enum~~ — resolvido em 01/05/2026 às 20:12
+- [x] ~~Ausência de tratamento global de erros~~ — resolvido em 01/05/2026 às 20:12
+- [x] ~~Testes unitários~~ — resolvido em 01/05/2026 às 20:35
+- [x] ~~Push para o GitHub~~ — realizado em 01/05/2026
+- [x] ~~GitHub Actions CI Pipeline~~ — resolvido em 01/05/2026 às 21:00
+- [x] ~~Warning de depreciação Node.js 20 no CI~~ — corrigido definitivamente em 01/05/2026 às 22:00
+
+### 🟡 Próximas funcionalidades (por prioridade)
+
+- [ ] Paginação no `GET /api/payments` — parâmetros `?page=` e `?pageSize=`
+- [ ] EF Core Migrations — substituir `EnsureCreated()` por `dotnet ef migrations`
+- [ ] Endpoint de health check (`/health`) via `AddHealthChecks()`
+
+---
+
+*Última atualização: 01/05/2026 às 22:00*
