@@ -20,9 +20,17 @@ name: CI
 # ── Gatilhos ──────────────────────────────────────────────────────────────────
 on:
   push:
-    branches: [ main ]        # Executa em todo push direto para main
+    branches: [ main ]
   pull_request:
-    branches: [ main ]        # Executa em todo PR direcionado a main
+    branches: [ main ]
+
+# ── Variáveis de ambiente globais ─────────────────────────────────────────────
+# Força o runtime das actions JavaScript a usar Node.js 24.
+# Necessário porque actions/checkout@v4 e actions/setup-dotnet@v4 ainda
+# usam Node.js 20, que será removido dos runners em 16/09/2026.
+# Referência: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 # ── Jobs ──────────────────────────────────────────────────────────────────────
 jobs:
