@@ -153,19 +153,54 @@ Credenciais do SQL Server estavam em plaintext nos arquivos versionados (`docker
 
 ### Push realizado: ❌
 
----
+## Sessão 3 — 01/05/2026 · Commit `a1f2caf`
 
-## Pendências e Próximos Passos (atualizado)
+### Pendências resolvidas
+
+**Fix 1 — Validação de enum no `UpdatePaymentStatusDto`**
+
+Antes, enviar `"status": 999` ou `"status": "Invalido"` gerava um `500` por exceção não tratada.
+
+| Arquivo | Mudança |
+|---|---|
+| `DTOs/UpdatePaymentStatusDto.cs` | Adicionado `[EnumDataType(typeof(PaymentStatus))]` com mensagem de erro explícita |
+| `Program.cs` | Registrado `JsonStringEnumConverter` globalmente — deserializador rejeita inteiros e strings inválidas com `400` antes de chegar ao handler |
+
+**Fix 2 — Tratamento global de erros (RFC 7807 ProblemDetails)**
+
+Antes, exceções não tratadas retornavam stack trace em Development e resposta vazia em Production.
+
+| Arquivo | Mudança |
+|---|---|
+| `Program.cs` | `AddProblemDetails()` no container de serviços |
+| `Program.cs` | `app.UseExceptionHandler()` — retorna `application/problem+json` em exceções não tratadas |
+| `Program.cs` | `app.UseStatusCodePages()` — formata respostas 4xx/5xx sem corpo |
+
+**Efeito combinado dos dois fixes**
+
+| Cenário | Antes | Depois |
+|---|---|---|
+| `PATCH` com `"status": "Invalido"` | `500` (exceção) | `400` com ProblemDetails |
+| `PATCH` com `"status": 999` | `500` (exceção) | `400` com ProblemDetails |
+| Exceção não tratada em qualquer endpoint | `500` com stack trace | `500` com ProblemDetails sem detalhes internos |
+| Rota inexistente | `404` sem corpo | `404` com ProblemDetails |
+
+### Build: ✅ 0 erros · 0 warnings
+
+### Commit(s)
+
+- [x] `a1f2caf` — `fix: add enum validation and global error handling` (01/05/2026)
+
+### Push realizado: ❌
+
+---
 
 ### 🔴 Antes do próximo push
 
-- [x] ~~Credenciais em plaintext no `docker-compose.yml`~~ — **resolvido em 01/05/2026**
-- [ ] **`UpdatePaymentStatusDto` sem validação de enum**  
-  Aceita qualquer string; uma entrada inválida causa exceção não tratada.  
-  **Solução:** adicionar `[EnumDataType(typeof(PaymentStatus))]` ou validação explícita.
-- [ ] **Ausência de tratamento global de erros**  
-  Exceções não tratadas expõem stack trace.  
-  **Solução:** `app.UseExceptionHandler` ou middleware `ProblemDetails`.
+- [x] ~~Credenciais em plaintext no `docker-compose.yml`~~ — resolvido em 01/05/2026
+- [x] ~~`UpdatePaymentStatusDto` sem validação de enum~~ — resolvido em 01/05/2026
+- [x] ~~Ausência de tratamento global de erros~~ — resolvido em 01/05/2026
+- [ ] **Fazer `git push` para o GitHub** — 3 commits locais aguardando
 
 ### 🟡 Próximas features (por prioridade)
 
@@ -174,7 +209,6 @@ Credenciais do SQL Server estavam em plaintext nos arquivos versionados (`docker
 - [ ] Paginação no `GET /api/payments` — parâmetros `?page=` e `?pageSize=`
 - [ ] EF Core Migrations — substituir `EnsureCreated()` por `dotnet ef migrations`
 - [ ] Health check endpoint (`/health`) via `AddHealthChecks()`
-- [ ] Respostas de erro padronizadas com `ProblemDetails` (RFC 7807)
 
 ---
 
