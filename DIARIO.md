@@ -10,18 +10,18 @@
 | Item | Estado |
 |---|---|
 | Repositório Git local | ✅ Inicializado (`main`) |
-| Remote GitHub | ✅ Configurado (`MarvadsBR/payment-api`) |
-| Último commit local | `40ddbb3` — `feat: initial Payment API` (30/04/2026) |
-| Push para GitHub | ❌ **Ainda não realizado** |
+| Remote GitHub | ✅ Configurado (`MarvadsBR/payment-api_marvdev`) |
+| Último commit local | `6b94c82` — `test: add unit tests for PaymentService and PaymentsController` (01/05/2026 às 20:35) |
+| Push para GitHub | ✅ **Realizado em 01/05/2026** |
 
 ---
 
-## Sessão 1 — 30/04/2026 · Commit `40ddbb3`
+## Sessão 1 — 30/04/2026 às 17:21 · Commit `40ddbb3`
 
 ### O que foi implementado
 
 **Estrutura base do projeto**
-- Projeto ASP.NET Core 8 (`PaymentApi.csproj`) com nullable enable, implicit usings e geração de XML doc
+- Projeto ASP.NET Core 8 (`PaymentApi.csproj`) com nullable enable, implicit usings e geração de documentação XML
 - Dependências: `Microsoft.EntityFrameworkCore.SqlServer 8.0.0`, `Microsoft.EntityFrameworkCore.Tools 8.0.0`, `Swashbuckle.AspNetCore 6.5.0`
 
 **Models**
@@ -64,7 +64,7 @@
 - `README.md` — stack, estrutura, endpoints, instruções Docker e local, exemplos HTTP, decisões de design
 - `.gitignore` — padrão .NET (bin, obj, .vs, .idea, publish, NuGet)
 
-### Arquivos no commit (18 arquivos · 643 linhas)
+### Arquivos incluídos no commit (18 arquivos · 643 linhas)
 
 ```
 .gitignore
@@ -89,94 +89,96 @@ docker-compose.yml
 
 ### Decisões técnicas registradas
 
-- **Service layer**: separa regras de negócio das preocupações HTTP
-- **DTOs**: evitam over-posting e desacoplam o contrato da entidade
+- **Camada de serviço**: separa regras de negócio das responsabilidades HTTP
+- **DTOs**: evitam over-posting e desacoplam o contrato da API da entidade
 - **Enum → string no banco**: mais legível em queries e logs
-- **`DeleteResult` enum**: permite ao controller retornar 404 vs 409 sem lançar exceções
-- **`EnsureCreated()`**: mantém o demo zero-config; em produção, substituir por migrations
+- **Enum `DeleteResult`**: permite ao controller retornar 404 vs 409 sem lançar exceções
+- **`EnsureCreated()`**: mantém o demo sem configuração; em produção, substituir por migrations
 
 ---
 
-## Pendências e Próximos Passos
+## Pendências e Próximas Funcionalidades
 
 ### 🔴 Antes do próximo push
 
-- [ ] **Segurança — credenciais em plaintext no `docker-compose.yml`**  
+- [ ] **Segurança — credenciais em texto puro no `docker-compose.yml`**  
   `SA_PASSWORD` e connection string com senha exposta.  
-  **Solução:** criar `.env` com as credenciais, referenciar via `${VAR}` no compose e adicionar `.env` ao `.gitignore`. Commitar apenas `.env.example`.
+  **Solução:** criar `.env` com as credenciais, referenciar via `${VAR}` no compose e adicionar `.env` ao `.gitignore`. Versionar apenas o `.env.example`.
 
 - [ ] **`UpdatePaymentStatusDto` sem validação de enum**  
-  Aceita qualquer string; uma entrada inválida causa exceção não tratada.  
+  Aceita qualquer string; um valor inválido causa exceção não tratada.  
   **Solução:** adicionar `[EnumDataType(typeof(PaymentStatus))]` ou `[Required]` + validação explícita.
 
 - [ ] **Ausência de tratamento global de erros**  
   Exceções não tratadas expõem stack trace em ambiente Development.  
   **Solução:** adicionar `app.UseExceptionHandler` ou middleware `ProblemDetails`.
 
-### 🟡 Próximas features (por prioridade)
+### 🟡 Próximas funcionalidades (por prioridade)
 
 - [ ] Testes unitários com **xUnit + Moq** — cobrir `PaymentService` (alto impacto no portfólio)
-- [ ] **GitHub Actions** — pipeline CI com `dotnet build` + `dotnet test`
+- [ ] **GitHub Actions** — pipeline de CI com `dotnet build` + `dotnet test`
 - [ ] Paginação no `GET /api/payments` — parâmetros `?page=` e `?pageSize=`
 - [ ] EF Core Migrations — substituir `EnsureCreated()` por `dotnet ef migrations`
-- [ ] Health check endpoint (`/health`) via `AddHealthChecks()`
+- [ ] Endpoint de health check (`/health`) via `AddHealthChecks()`
 - [ ] Respostas de erro padronizadas com `ProblemDetails` (RFC 7807)
 
 ---
 
-## Sessão 2 — 01/05/2026 · Pendente de commit
+## Sessão 2 — 01/05/2026 às 20:08 · Commit `4b810ce`
 
-### Problema resolvido: OWASP A02 — Sensitive Data Exposure
+### Problema resolvido: OWASP A02 — Exposição de Dados Sensíveis
 
-Credenciais do SQL Server estavam em plaintext nos arquivos versionados (`docker-compose.yml`, `appsettings.json`, `appsettings.Development.json`), expostas a qualquer pessoa com acesso ao repositório.
+As credenciais do SQL Server estavam em texto puro nos arquivos versionados (`docker-compose.yml`, `appsettings.json`, `appsettings.Development.json`), expostas a qualquer pessoa com acesso ao repositório.
 
 ### Alterações realizadas
 
 | Arquivo | Tipo | Mudança |
 |---|---|---|
-| `.env` | **Novo** (gitignored) | Credenciais reais (`SA_PASSWORD`, `DB_NAME`) |
-| `.env.example` | **Novo** (commitado) | Template com valores placeholder para novos devs |
+| `.env` | **Novo** (ignorado pelo git) | Credenciais reais (`SA_PASSWORD`, `DB_NAME`) |
+| `.env.example` | **Novo** (versionado) | Template com valores placeholder para novos devs |
 | `docker-compose.yml` | **Modificado** | `Your_password123` → `${SA_PASSWORD}`, `PaymentDb` → `${DB_NAME}` nas 3 ocorrências |
 | `appsettings.json` | **Modificado** | `Your_password123` → `CHANGE_ME` |
 | `appsettings.Development.json` | **Modificado** | `Your_password123` → `CHANGE_ME` |
+| `.gitignore` | **Modificado** | Adicionado `!.env.example` para exceção da regra `.env.*` |
 
 ### Como funciona agora
 
-- `docker-compose` lê `.env` automaticamente ao executar `docker-compose up`
-- `.env` está no `.gitignore` (já estava) — nunca será commitado
+- `docker-compose` lê o arquivo `.env` automaticamente ao executar `docker-compose up`
+- `.env` está no `.gitignore` — nunca será versionado
 - `.env.example` é o template que novos colaboradores copiam e preenchem
-- `appsettings` mantém `CHANGE_ME` explícito para desenvolvimento local sem Docker → usar `dotnet user-secrets`
+- `appsettings` mantém `CHANGE_ME` explícito para desenvolvimento local sem Docker
 
-### Commit(s)
+### Commits
 
-- [x] `4b810ce` — `fix: remove hardcoded credentials, use .env for secrets` (01/05/2026)
+- [x] `4b810ce` — `fix: remove hardcoded credentials, use .env for secrets` (01/05/2026 às 20:08)
+- [x] `0e6ec33` — `docs: update DIARIO with commit hash for session 2` (01/05/2026 às 20:08)
 
-### Push realizado: ❌
+### Push realizado: ✅
 
-## Sessão 3 — 01/05/2026 · Commit `a1f2caf`
+## Sessão 3 — 01/05/2026 às 20:12 · Commit `a1f2caf`
 
-### Pendências resolvidas
+### Correções realizadas
 
-**Fix 1 — Validação de enum no `UpdatePaymentStatusDto`**
+**Correção 1 — Validação de enum no `UpdatePaymentStatusDto`**
 
 Antes, enviar `"status": 999` ou `"status": "Invalido"` gerava um `500` por exceção não tratada.
 
 | Arquivo | Mudança |
 |---|---|
 | `DTOs/UpdatePaymentStatusDto.cs` | Adicionado `[EnumDataType(typeof(PaymentStatus))]` com mensagem de erro explícita |
-| `Program.cs` | Registrado `JsonStringEnumConverter` globalmente — deserializador rejeita inteiros e strings inválidas com `400` antes de chegar ao handler |
+| `Program.cs` | Registrado `JsonStringEnumConverter` globalmente — o deserializador rejeita inteiros e strings inválidas com `400` antes de chegar ao handler |
 
-**Fix 2 — Tratamento global de erros (RFC 7807 ProblemDetails)**
+**Correção 2 — Tratamento global de erros (RFC 7807 ProblemDetails)**
 
 Antes, exceções não tratadas retornavam stack trace em Development e resposta vazia em Production.
 
 | Arquivo | Mudança |
 |---|---|
-| `Program.cs` | `AddProblemDetails()` no container de serviços |
+| `Program.cs` | `AddProblemDetails()` registrado no contêiner de serviços |
 | `Program.cs` | `app.UseExceptionHandler()` — retorna `application/problem+json` em exceções não tratadas |
 | `Program.cs` | `app.UseStatusCodePages()` — formata respostas 4xx/5xx sem corpo |
 
-**Efeito combinado dos dois fixes**
+**Efeito combinado das duas correções**
 
 | Cenário | Antes | Depois |
 |---|---|---|
@@ -185,31 +187,101 @@ Antes, exceções não tratadas retornavam stack trace em Development e resposta
 | Exceção não tratada em qualquer endpoint | `500` com stack trace | `500` com ProblemDetails sem detalhes internos |
 | Rota inexistente | `404` sem corpo | `404` com ProblemDetails |
 
-### Build: ✅ 0 erros · 0 warnings
+### Build: ✅ 0 erros · 0 avisos
 
-### Commit(s)
+### Commits
 
-- [x] `a1f2caf` — `fix: add enum validation and global error handling` (01/05/2026)
+- [x] `a1f2caf` — `fix: add enum validation and global error handling` (01/05/2026 às 20:12)
+- [x] `f0b1168` — `docs: update DIARIO - session 3 fixes registered` (01/05/2026 às 20:13)
 
-### Push realizado: ❌
+### Push realizado: ✅
 
 ---
 
-### 🔴 Antes do próximo push
+## Sessão 4 — 01/05/2026 às 20:35 · Commit `6b94c82`
 
-- [x] ~~Credenciais em plaintext no `docker-compose.yml`~~ — resolvido em 01/05/2026
-- [x] ~~`UpdatePaymentStatusDto` sem validação de enum~~ — resolvido em 01/05/2026
-- [x] ~~Ausência de tratamento global de erros~~ — resolvido em 01/05/2026
-- [ ] **Fazer `git push` para o GitHub** — 3 commits locais aguardando
+### O que foi implementado: Testes Unitários
 
-### 🟡 Próximas features (por prioridade)
+Criação do projeto `PaymentApi.Tests` com cobertura completa de `PaymentService` e `PaymentsController`.
 
-- [ ] Testes unitários com **xUnit + Moq** — cobrir `PaymentService` (alto impacto no portfólio)
-- [ ] **GitHub Actions** — pipeline CI com `dotnet build` + `dotnet test`
+**Ferramentas utilizadas**
+
+| Ferramenta | Finalidade |
+|---|---|
+| xUnit | Framework de testes |
+| Moq 4.20.70 | Criação de objetos dublê (mocks) para o `IPaymentService` |
+| EF Core InMemory 8.0.0 | Banco em memória para testar queries e persistência reais |
+
+**Arquivos criados**
+
+| Arquivo | Descrição |
+|---|---|
+| `PaymentApi.sln` | Arquivo de solução agrupando os dois projetos |
+| `PaymentApi.Tests/PaymentApi.Tests.csproj` | Projeto de testes com referência ao projeto principal |
+| `PaymentApi.Tests/Helpers/DbContextFactory.cs` | Fábrica de `AppDbContext` isolado por teste (banco InMemory com nome único) |
+| `PaymentApi.Tests/Services/PaymentServiceTests.cs` | 14 testes do `PaymentService` com EF InMemory |
+| `PaymentApi.Tests/Controllers/PaymentsControllerTests.cs` | 12 testes do `PaymentsController` com Moq |
+
+**Cobertura dos testes**
+
+*PaymentServiceTests — 14 testes (xUnit + EF InMemory)*
+
+| Método | Cenário testado |
+|---|---|
+| `GetAllAsync` | Sem filtro, filtro válido, filtro inválido, filtro sem distinção de maiúsculas |
+| `GetByIdAsync` | Id existente, id inexistente |
+| `CreateAsync` | DTO válido, moeda normalizada para maiúsculas, persistência no banco |
+| `UpdateStatusAsync` | Id existente, id inexistente |
+| `DeleteAsync` | Pagamento Pending (sucesso), id não encontrado, status não-Pending × 3 via `[Theory]` |
+
+*PaymentsControllerTests — 12 testes (xUnit + Moq)*
+
+| Endpoint | Cenário testado |
+|---|---|
+| `GET /api/payments` | Retorna 200 com lista, repassa filtro ao service |
+| `GET /api/payments/{id}` | Retorna 200 com DTO, retorna 404 |
+| `POST /api/payments` | Retorna 201 CreatedAtAction |
+| `PATCH /api/payments/{id}/status` | Retorna 200 atualizado, retorna 404 |
+| `DELETE /api/payments/{id}` | Retorna 204, retorna 404, retorna 409 |
+
+**Técnicas didáticas aplicadas**
+
+- `[Theory] + [InlineData]` — mesmo teste executado com Completed, Failed e Refunded sem duplicar código
+- `mock.Verify()` — garante que o controller repassa o filtro ao service
+- Banco isolado por teste — evita vazamento de estado entre testes
+- Comentários explicativos em todos os arquivos de teste
+
+**Alteração no projeto principal**
+
+- `PaymentApi.csproj`: adicionado bloco `<ItemGroup>` para excluir `PaymentApi.Tests/**` do glob do projeto principal (evitava conflito de compilação)
+
+### Resultado: ✅ 26/26 testes aprovados · 0 erros · 0 avisos
+
+### Commits
+
+- [x] `6b94c82` — `test: add unit tests for PaymentService and PaymentsController` (01/05/2026 às 20:35)
+
+### Push realizado: ✅
+
+---
+
+## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 20:35)
+
+### ✅ Resolvido
+
+- [x] ~~Credenciais em texto puro no `docker-compose.yml`~~ — resolvido em 01/05/2026 às 20:08
+- [x] ~~`UpdatePaymentStatusDto` sem validação de enum~~ — resolvido em 01/05/2026 às 20:12
+- [x] ~~Ausência de tratamento global de erros~~ — resolvido em 01/05/2026 às 20:12
+- [x] ~~Testes unitários~~ — resolvido em 01/05/2026 às 20:35
+- [x] ~~Push para o GitHub~~ — realizado em 01/05/2026
+
+### 🟡 Próximas funcionalidades (por prioridade)
+
+- [ ] **GitHub Actions** — pipeline de CI com `dotnet build` + `dotnet test` em cada push/PR
 - [ ] Paginação no `GET /api/payments` — parâmetros `?page=` e `?pageSize=`
 - [ ] EF Core Migrations — substituir `EnsureCreated()` por `dotnet ef migrations`
-- [ ] Health check endpoint (`/health`) via `AddHealthChecks()`
+- [ ] Endpoint de health check (`/health`) via `AddHealthChecks()`
 
 ---
 
-*Última atualização: 01/05/2026*
+*Última atualização: 01/05/2026 às 20:35*
