@@ -149,7 +149,7 @@ Credenciais do SQL Server estavam em plaintext nos arquivos versionados (`docker
 
 ### Commit(s)
 
-- [ ] `fix: remove hardcoded credentials, use .env for secrets` — **pendente**
+- [x] `4b810ce` — `fix: remove hardcoded credentials, use .env for secrets` (01/05/2026)
 
 ### Push realizado: ❌
 
