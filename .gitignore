@@ -39,6 +39,7 @@ logs/
 ## Environment / secrets
 .env
 .env.*
+!.env.example
 appsettings.Local.json
 appsettings.*.Local.json
 
