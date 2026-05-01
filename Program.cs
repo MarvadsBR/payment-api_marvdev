@@ -1,11 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using PaymentApi.Data;
 using PaymentApi.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services ──────────────────────────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -38,6 +42,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
