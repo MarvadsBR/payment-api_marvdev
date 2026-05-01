@@ -11,7 +11,7 @@
 |---|---|
 | Repositório Git local | ✅ Inicializado (`main`) |
 | Remote GitHub | ✅ Configurado (`MarvadsBR/payment-api_marvdev`) |
-| Último commit local | `6b94c82` — `test: add unit tests for PaymentService and PaymentsController` (01/05/2026 às 20:35) |
+| Último commit local | `cf29fd4` — `ci: add GitHub Actions CI pipeline` (01/05/2026) |
 | Push para GitHub | ✅ **Realizado em 01/05/2026** |
 
 ---
@@ -265,7 +265,7 @@ Criação do projeto `PaymentApi.Tests` com cobertura completa de `PaymentServic
 
 ---
 
-## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 20:35)
+*Última atualização: 01/05/2026 às 21:00*
 
 ### ✅ Resolvido
 
@@ -274,14 +274,67 @@ Criação do projeto `PaymentApi.Tests` com cobertura completa de `PaymentServic
 - [x] ~~Ausência de tratamento global de erros~~ — resolvido em 01/05/2026 às 20:12
 - [x] ~~Testes unitários~~ — resolvido em 01/05/2026 às 20:35
 - [x] ~~Push para o GitHub~~ — realizado em 01/05/2026
+- [x] ~~GitHub Actions CI Pipeline~~ — resolvido em 01/05/2026 às 21:00
 
 ### 🟡 Próximas funcionalidades (por prioridade)
 
-- [ ] **GitHub Actions** — pipeline de CI com `dotnet build` + `dotnet test` em cada push/PR
 - [ ] Paginação no `GET /api/payments` — parâmetros `?page=` e `?pageSize=`
 - [ ] EF Core Migrations — substituir `EnsureCreated()` por `dotnet ef migrations`
 - [ ] Endpoint de health check (`/health`) via `AddHealthChecks()`
 
 ---
 
-*Última atualização: 01/05/2026 às 20:35*
+## Sessão 5 — 01/05/2026 às 21:00 · Commit `cf29fd4`
+
+### O que foi implementado: GitHub Actions CI Pipeline
+
+Configuração de pipeline de Integração Contínua (CI) que executa automaticamente build e testes a cada push ou Pull Request na branch `main`.
+
+**Arquivo criado**
+
+| Arquivo | Descrição |
+|---|---|
+| `.github/workflows/ci.yml` | Workflow do GitHub Actions com 5 etapas documentadas |
+
+**Etapas do pipeline**
+
+| Etapa | Comando | O que valida |
+|---|---|---|
+| Checkout | `actions/checkout@v4` | Clona o código no runner |
+| Configurar .NET 8 | `actions/setup-dotnet@v4` | Instala o SDK 8.0.x |
+| Restaurar dependências | `dotnet restore PaymentApi.sln` | Baixa pacotes NuGet |
+| Build | `dotnet build --configuration Release` | Falha em erro de compilação |
+| Testes | `dotnet test PaymentApi.Tests/...` | Falha se qualquer teste falhar |
+
+**Configurações do gatilho**
+
+```yaml
+on:
+  push:
+    branches: [ main ]       # Todo push direto para main
+  pull_request:
+    branches: [ main ]       # Todo PR direcionado a main
+```
+
+**Alteração no README.md**
+
+- Badge de status do CI adicionado ao topo: `[![CI](...)(...)]`
+- Exibe ✅ ou ❌ em tempo real conforme resultado da última execução
+
+**Benefícios para o portfólio**
+
+- Demonstra conhecimento de DevOps e cultura de qualidade
+- Garante que nenhum commit quebra o build ou os testes
+- Badge visível no GitHub sinaliza projeto profissional
+
+### Resultado esperado: ✅ 26/26 testes aprovados no runner ubuntu-latest
+
+### Commits
+
+- [x] `cf29fd4` — `ci: add GitHub Actions CI pipeline` (01/05/2026 às 21:00)
+
+### Push realizado: ✅
+
+---
+
+## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 21:00)
