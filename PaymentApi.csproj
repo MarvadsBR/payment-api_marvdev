@@ -16,4 +16,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore"                  Version="6.5.0" />
   </ItemGroup>
 
+  <!-- Exclui a pasta de testes para que o projeto principal não compile arquivos de teste -->
+  <ItemGroup>
+    <Compile Remove="PaymentApi.Tests\**" />
+    <Content Remove="PaymentApi.Tests\**" />
+    <EmbeddedResource Remove="PaymentApi.Tests\**" />
+    <None Remove="PaymentApi.Tests\**" />
+  </ItemGroup>
+
 </Project>
