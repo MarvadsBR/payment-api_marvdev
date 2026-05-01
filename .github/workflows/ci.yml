@@ -24,14 +24,6 @@ on:
   pull_request:
     branches: [ main ]
 
-# ── Variáveis de ambiente globais ─────────────────────────────────────────────
-# Força o runtime das actions JavaScript a usar Node.js 24.
-# Necessário porque actions/checkout@v4 e actions/setup-dotnet@v4 ainda
-# usam Node.js 20, que será removido dos runners em 16/09/2026.
-# Referência: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 # ── Jobs ──────────────────────────────────────────────────────────────────────
 jobs:
   build-and-test:
@@ -42,14 +34,16 @@ jobs:
       # ── 1. Checkout ─────────────────────────────────────────────────────────
       # Clona o repositório no runner para que os passos seguintes
       # tenham acesso ao código-fonte.
+      # v6 usa Node.js 24 nativamente (lançado em nov/2025).
       - name: Checkout do código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # ── 2. Configurar .NET ──────────────────────────────────────────────────
       # Instala o SDK do .NET 8 no runner.
+      # v5 usa Node.js 24 nativamente (lançado em set/2025).
       # O campo 'dotnet-version' deve corresponder ao TargetFramework do .csproj.
       - name: Configurar .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
