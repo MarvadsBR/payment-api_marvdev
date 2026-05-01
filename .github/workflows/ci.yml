@@ -1,0 +1,67 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# CI — Integração Contínua da Payment API
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# O QUE ESTE PIPELINE FAZ:
+#   1. É acionado automaticamente em todo push ou Pull Request para a branch main
+#   2. Restaura as dependências NuGet
+#   3. Compila o projeto em modo Release (falha se houver erro de build)
+#   4. Executa os 26 testes unitários (falha se algum teste falhar)
+#
+# POR QUE GITHUB ACTIONS?
+#   • Integrado ao repositório — sem ferramentas externas
+#   • Gratuito para repositórios públicos
+#   • Exibe badge de status no README (✅ passing / ❌ failing)
+#   • Bloqueia merges de PR quando os testes falham (configurável)
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+# ── Gatilhos ──────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [ main ]        # Executa em todo push direto para main
+  pull_request:
+    branches: [ main ]        # Executa em todo PR direcionado a main
+
+# ── Jobs ──────────────────────────────────────────────────────────────────────
+jobs:
+  build-and-test:
+    name: Build e Testes (.NET 8)
+    runs-on: ubuntu-latest     # Runner gratuito do GitHub Actions (Linux)
+
+    steps:
+      # ── 1. Checkout ─────────────────────────────────────────────────────────
+      # Clona o repositório no runner para que os passos seguintes
+      # tenham acesso ao código-fonte.
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # ── 2. Configurar .NET ──────────────────────────────────────────────────
+      # Instala o SDK do .NET 8 no runner.
+      # O campo 'dotnet-version' deve corresponder ao TargetFramework do .csproj.
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # ── 3. Restaurar dependências ───────────────────────────────────────────
+      # Equivale a `dotnet restore` — baixa os pacotes NuGet declarados
+      # nos arquivos .csproj. O cache do runner acelera execuções subsequentes.
+      - name: Restaurar dependências
+        run: dotnet restore PaymentApi.sln
+
+      # ── 4. Build ────────────────────────────────────────────────────────────
+      # Compila toda a solution em modo Release.
+      # --no-restore evita restaurar novamente (já foi feito no passo anterior).
+      # O pipeline falha aqui se houver qualquer erro de compilação.
+      - name: Build
+        run: dotnet build PaymentApi.sln --configuration Release --no-restore
+
+      # ── 5. Testes ───────────────────────────────────────────────────────────
+      # Executa todos os testes unitários do projeto PaymentApi.Tests.
+      # --no-build evita recompilar (já compilado no passo anterior).
+      # --verbosity normal exibe o nome de cada teste no log do Actions.
+      # O pipeline falha aqui se qualquer teste falhar.
+      - name: Executar testes unitários
+        run: dotnet test PaymentApi.Tests/PaymentApi.Tests.csproj --no-build --configuration Release --verbosity normal

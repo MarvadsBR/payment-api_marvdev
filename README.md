@@ -1,5 +1,7 @@
 # Payment API
 
+[![CI](https://github.com/MarvadsBR/payment-api_marvdev/actions/workflows/ci.yml/badge.svg)](https://github.com/MarvadsBR/payment-api_marvdev/actions/workflows/ci.yml)
+
 REST API for payment management built with **ASP.NET Core 8**, **Entity Framework Core 8**, **SQL Server 2022** and **Docker**.
 
 > Projeto de portfólio demonstrando boas práticas de desenvolvimento de APIs com .NET.
