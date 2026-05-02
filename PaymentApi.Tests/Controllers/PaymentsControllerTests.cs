@@ -46,51 +46,66 @@ public class PaymentsControllerTests
         UpdatedAt   = DateTime.UtcNow
     };
 
+    private static PagedResponseDto<PaymentResponseDto> SamplePaged(params PaymentResponseDto[] items) => new()
+    {
+        Page       = 1,
+        PageSize   = 10,
+        TotalCount = items.Length,
+        Data       = items
+    };
+
     // ─────────────────────────────────────────────────────────────────────────
     // GET /api/payments
     // ─────────────────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetAll_ReturnsOk_WithListOfPayments()
+    public async Task GetAll_ReturnsOk_WithPagedResponse()
     {
         // ARRANGE
         var mock = new Mock<IPaymentService>();
-
-        // Setup: quando GetAllAsync for chamado com qualquer string? (It.IsAny),
-        // retornar uma lista com 2 itens.
-        mock.Setup(s => s.GetAllAsync(It.IsAny<string?>()))
-            .ReturnsAsync(new[] { SampleResponse(), SampleResponse() });
+        mock.Setup(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(SamplePaged(SampleResponse(), SampleResponse()));
 
         var controller = new PaymentsController(mock.Object);
 
         // ACT
-        var actionResult = await controller.GetAll(status: null);
+        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 10);
 
         // ASSERT
-        // Verificamos que o resultado é um OkObjectResult (HTTP 200)
         var ok = Assert.IsType<OkObjectResult>(actionResult);
-
-        // E que o valor contém 2 itens
-        var items = Assert.IsAssignableFrom<IEnumerable<PaymentResponseDto>>(ok.Value);
-        Assert.Equal(2, items.Count());
+        var paged = Assert.IsType<PagedResponseDto<PaymentResponseDto>>(ok.Value);
+        Assert.Equal(2, paged.TotalCount);
+        Assert.Equal(2, paged.Data.Count());
     }
 
     [Fact]
-    public async Task GetAll_PassesStatusFilterToService()
+    public async Task GetAll_InvalidPage_ReturnsBadRequest()
     {
-        // ARRANGE
+        // ARRANGE — page=0 deve ser rejeitado pelo controller antes de chamar o service
         var mock = new Mock<IPaymentService>();
-        mock.Setup(s => s.GetAllAsync("Pending"))
-            .ReturnsAsync(new[] { SampleResponse() });
-
         var controller = new PaymentsController(mock.Object);
 
         // ACT
-        await controller.GetAll(status: "Pending");
+        var actionResult = await controller.GetAll(status: null, page: 0, pageSize: 10);
 
-        // ASSERT — verificamos que o service foi chamado exatamente 1 vez
-        // com o valor "Pending". Garante que o controller repassa o filtro.
-        mock.Verify(s => s.GetAllAsync("Pending"), Times.Once);
+        // ASSERT
+        Assert.IsType<BadRequestObjectResult>(actionResult);
+        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_InvalidPageSize_ReturnsBadRequest()
+    {
+        // ARRANGE — pageSize=200 excede o limite de 100
+        var mock = new Mock<IPaymentService>();
+        var controller = new PaymentsController(mock.Object);
+
+        // ACT
+        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 200);
+
+        // ASSERT
+        Assert.IsType<BadRequestObjectResult>(actionResult);
+        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

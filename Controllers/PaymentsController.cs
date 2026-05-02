@@ -16,13 +16,28 @@ public class PaymentsController : ControllerBase
         _service = service;
     }
 
-    /// <summary>List all payments. Optionally filter by status (Pending, Completed, Failed, Refunded).</summary>
+    /// <summary>
+    /// List payments with optional filtering and pagination.
+    /// </summary>
+    /// <param name="status">Optional status filter (Pending, Completed, Failed, Refunded).</param>
+    /// <param name="page">Page number, 1-based. Default: 1.</param>
+    /// <param name="pageSize">Items per page (1–100). Default: 10.</param>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<PaymentResponseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll([FromQuery] string? status)
+    [ProducesResponseType(typeof(PagedResponseDto<PaymentResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var payments = await _service.GetAllAsync(status);
-        return Ok(payments);
+        if (page < 1)
+            return BadRequest(new { error = "'page' must be greater than or equal to 1." });
+
+        if (pageSize < 1 || pageSize > 100)
+            return BadRequest(new { error = "'pageSize' must be between 1 and 100." });
+
+        var result = await _service.GetAllAsync(status, page, pageSize);
+        return Ok(result);
     }
 
     /// <summary>Get a payment by its ID.</summary>

@@ -14,7 +14,7 @@ public class PaymentService : IPaymentService
         _db = db;
     }
 
-    public async Task<IEnumerable<PaymentResponseDto>> GetAllAsync(string? status)
+    public async Task<PagedResponseDto<PaymentResponseDto>> GetAllAsync(string? status, int page, int pageSize)
     {
         var query = _db.Payments.AsQueryable();
 
@@ -24,10 +24,22 @@ public class PaymentService : IPaymentService
             query = query.Where(p => p.Status == parsedStatus);
         }
 
-        return await query
+        var totalCount = await query.CountAsync();
+
+        var data = await query
             .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(p => ToDto(p))
             .ToListAsync();
+
+        return new PagedResponseDto<PaymentResponseDto>
+        {
+            Page       = page,
+            PageSize   = pageSize,
+            TotalCount = totalCount,
+            Data       = data
+        };
     }
 
     public async Task<PaymentResponseDto?> GetByIdAsync(Guid id)

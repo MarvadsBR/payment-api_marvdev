@@ -2,11 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using PaymentApi.Data;
 using PaymentApi.Services;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>(
+        name: "database",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["db", "sql"]);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -38,7 +44,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate(); // Aplica migrations pendentes; cria o banco se não existir
 }
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
@@ -54,5 +60,6 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

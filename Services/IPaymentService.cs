@@ -4,7 +4,7 @@ namespace PaymentApi.Services;
 
 public interface IPaymentService
 {
-    Task<IEnumerable<PaymentResponseDto>> GetAllAsync(string? status);
+    Task<PagedResponseDto<PaymentResponseDto>> GetAllAsync(string? status, int page, int pageSize);
     Task<PaymentResponseDto?> GetByIdAsync(Guid id);
     Task<PaymentResponseDto> CreateAsync(CreatePaymentDto dto);
     Task<PaymentResponseDto?> UpdateStatusAsync(Guid id, UpdatePaymentStatusDto dto);

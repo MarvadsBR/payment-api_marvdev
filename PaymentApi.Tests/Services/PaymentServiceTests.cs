@@ -63,11 +63,11 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT ─────────────────────────────────────────────────────────────────
-        var result = await service.GetAllAsync(status: null);
+        var result = await service.GetAllAsync(status: null, page: 1, pageSize: 10);
 
         // ASSERT ──────────────────────────────────────────────────────────────
-        // Assert.Equal(expected, actual) → a ordem dos argumentos importa!
-        Assert.Equal(2, result.Count());
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Data.Count());
     }
 
     [Fact]
@@ -85,12 +85,12 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT
-        var result = await service.GetAllAsync(status: "Pending");
+        var result = await service.GetAllAsync(status: "Pending", page: 1, pageSize: 10);
 
         // ASSERT
         // Apenas os 2 pagamentos Pending devem ser retornados.
-        Assert.Equal(2, result.Count());
-        Assert.All(result, r => Assert.Equal("Pending", r.Status));
+        Assert.Equal(2, result.TotalCount);
+        Assert.All(result.Data, r => Assert.Equal("Pending", r.Status));
     }
 
     [Fact]
@@ -108,11 +108,11 @@ public class PaymentServiceTests
 
         // ACT
         // "InvalidStatus" não existe no enum → Enum.TryParse falha → sem filtro.
-        var result = await service.GetAllAsync(status: "InvalidStatus");
+        var result = await service.GetAllAsync(status: "InvalidStatus", page: 1, pageSize: 10);
 
         // ASSERT
         // Comportamento esperado: retorna tudo quando o filtro é inválido.
-        Assert.Equal(2, result.Count());
+        Assert.Equal(2, result.TotalCount);
     }
 
     [Fact]
@@ -126,10 +126,11 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT — "completed" em minúsculas deve funcionar igual a "Completed"
-        var result = await service.GetAllAsync(status: "completed");
+        var result = await service.GetAllAsync(status: "completed", page: 1, pageSize: 10);
 
         // ASSERT
-        Assert.Single(result); // Assert.Single verifica que há exatamente 1 item
+        Assert.Equal(1, result.TotalCount);
+        Assert.Single(result.Data);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -325,6 +326,54 @@ public class PaymentServiceTests
 
         // ASSERT
         Assert.Equal(DeleteResult.NotFound, result);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GetAllAsync — paginação
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAllAsync_Pagination_ReturnsCorrectPage()
+    {
+        // ARRANGE — 5 pagamentos; pedimos page=2, pageSize=2 → esperamos 2 itens
+        using var db = DbContextFactory.Create(nameof(GetAllAsync_Pagination_ReturnsCorrectPage));
+        var service = new PaymentService(db);
+
+        for (int i = 0; i < 5; i++)
+            db.Payments.Add(new Payment { Description = $"P{i}", Amount = i + 1, Currency = "BRL", Method = PaymentMethod.Pix });
+        await db.SaveChangesAsync();
+
+        // ACT
+        var result = await service.GetAllAsync(status: null, page: 2, pageSize: 2);
+
+        // ASSERT
+        Assert.Equal(5, result.TotalCount);   // total real no banco
+        Assert.Equal(2, result.Data.Count()); // apenas 2 na página
+        Assert.Equal(2, result.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(3, result.TotalPages);   // ceil(5/2)
+        Assert.True(result.HasPreviousPage);
+        Assert.True(result.HasNextPage);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_LastPage_HasNextPageFalse()
+    {
+        // ARRANGE — 3 pagamentos; page=2, pageSize=2 → página final com 1 item
+        using var db = DbContextFactory.Create(nameof(GetAllAsync_LastPage_HasNextPageFalse));
+        var service = new PaymentService(db);
+
+        for (int i = 0; i < 3; i++)
+            db.Payments.Add(new Payment { Description = $"P{i}", Amount = i + 1, Currency = "BRL", Method = PaymentMethod.Pix });
+        await db.SaveChangesAsync();
+
+        // ACT
+        var result = await service.GetAllAsync(status: null, page: 2, pageSize: 2);
+
+        // ASSERT
+        Assert.Single(result.Data);  // apenas 1 sobrou na última página
+        Assert.False(result.HasNextPage);
+        Assert.True(result.HasPreviousPage);
     }
 
     /// <summary>
