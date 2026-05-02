@@ -11,7 +11,7 @@
 |---|---|
 | Repositório Git local | ✅ Inicializado (`main`) |
 | Remote GitHub | ✅ Configurado (`MarvadsBR/payment-api_marvdev`) |
-| Último commit local | `fdfa1fe` — `ci: atualizar actions para versoes com Node.js 24 nativo` (01/05/2026) |
+| Último commit local | `99f239e` — `feat: add pagination, EF Core migrations and health check endpoint` (01/05/2026) |
 | Push para GitHub | ✅ **Realizado em 01/05/2026** |
 
 ---
@@ -436,10 +436,121 @@ Consultadas as páginas de releases oficiais no GitHub:
 
 ### 🟡 Próximas funcionalidades (por prioridade)
 
-- [ ] Paginação no `GET /api/payments` — parâmetros `?page=` e `?pageSize=`
-- [ ] EF Core Migrations — substituir `EnsureCreated()` por `dotnet ef migrations`
-- [ ] Endpoint de health check (`/health`) via `AddHealthChecks()`
+- [x] ~~Paginação no `GET /api/payments`~~ — resolvido em 01/05/2026 às 22:30
+- [x] ~~EF Core Migrations~~ — resolvido em 01/05/2026 às 22:30
+- [x] ~~Endpoint de health check (`/health`)~~ — resolvido em 01/05/2026 às 22:30
 
 ---
 
-*Última atualização: 01/05/2026 às 22:00*
+*Última atualização: 01/05/2026 às 22:30*
+
+---
+
+## Sessão 8 — 01/05/2026 às 22:30 · Commit `99f239e`
+
+### O que foi implementado: Paginação, Migrations e Health Check
+
+---
+
+### Feature 1 — Paginação no `GET /api/payments`
+
+Antes, o endpoint retornava todos os pagamentos de uma vez — sem limite, sem metadados de navegação. Em produção isso é inviável com grandes volumes de dados.
+
+**Arquivos alterados**
+
+| Arquivo | Tipo | Mudança |
+|---|---|---|
+| `DTOs/PagedResponseDto.cs` | **Novo** | Envelope genérico `PagedResponseDto<T>` |
+| `Services/IPaymentService.cs` | **Modificado** | Assinatura: `GetAllAsync(status, page, pageSize)` |
+| `Services/PaymentService.cs` | **Modificado** | `CountAsync()` + `Skip/Take` + retorno do envelope |
+| `Controllers/PaymentsController.cs` | **Modificado** | Query params `page` (default 1) e `pageSize` (default 10, máx 100) com validação 400 |
+
+**Campos do `PagedResponseDto<T>`**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `Page` | `int` | Página atual (1-based) |
+| `PageSize` | `int` | Itens por página |
+| `TotalCount` | `int` | Total de registros que casam com o filtro |
+| `TotalPages` | `int` (calculado) | `ceil(TotalCount / PageSize)` |
+| `HasPreviousPage` | `bool` (calculado) | `Page > 1` |
+| `HasNextPage` | `bool` (calculado) | `Page < TotalPages` |
+| `Data` | `IEnumerable<T>` | Itens da página |
+
+**Validação no controller**
+
+| Cenário | Resposta |
+|---|---|
+| `page < 1` | `400 Bad Request` |
+| `pageSize < 1 ou > 100` | `400 Bad Request` |
+| Parâmetros válidos | `200 OK` com `PagedResponseDto` |
+
+**Novos testes adicionados (3)**
+
+| Teste | O que valida |
+|---|---|
+| `GetAllAsync_Pagination_ReturnsCorrectPage` | page=2, pageSize=2 de 5 → 2 itens, TotalCount=5, TotalPages=3 |
+| `GetAllAsync_LastPage_HasNextPageFalse` | Última página → `HasNextPage=false`, `HasPreviousPage=true` |
+| `GetAll_InvalidPage_ReturnsBadRequest` | page=0 → 400, service nunca chamado |
+| `GetAll_InvalidPageSize_ReturnsBadRequest` | pageSize=200 → 400, service nunca chamado |
+
+---
+
+### Feature 2 — EF Core Migrations (substitui `EnsureCreated()`)
+
+`EnsureCreated()` cria o schema uma vez e nunca mais o evolui. Qualquer mudança de model exigiria dropar o banco manualmente. Migrations versionam o schema e permitem evolução controlada.
+
+**O que foi feito**
+
+1. Instalada ferramenta global `dotnet-ef 8.0.26`
+2. Migration `InitialCreate` gerada com `dotnet-ef migrations add InitialCreate`
+3. `Program.cs`: `db.Database.EnsureCreated()` → `db.Database.Migrate()`
+
+**Arquivos gerados**
+
+| Arquivo | Descrição |
+|---|---|
+| `Migrations/20260502022748_InitialCreate.cs` | Migration com `Up()` e `Down()` do schema inicial |
+| `Migrations/20260502022748_InitialCreate.Designer.cs` | Snapshot gerado automaticamente pelo EF |
+| `Migrations/AppDbContextModelSnapshot.cs` | Estado atual do model para diff de futuras migrations |
+
+**Diferença de comportamento**
+
+| | `EnsureCreated()` | `Migrate()` |
+|---|---|---|
+| Cria banco se não existe | ✅ | ✅ |
+| Aplica novas migrations | ❌ | ✅ |
+| Histórico de mudanças | ❌ | ✅ |
+| Compatível com CI/CD | ❌ | ✅ |
+
+---
+
+### Feature 3 — Endpoint de Health Check (`GET /health`)
+
+Endpoints de health check são padrão em sistemas modernos para sinalizar ao orquestrador (Docker, Kubernetes, etc.) e ao monitoramento se a aplicação está operacional.
+
+**O que foi feito**
+
+| Arquivo | Mudança |
+|---|---|
+| `Program.cs` | `AddHealthChecks().AddDbContextCheck<AppDbContext>()` + `MapHealthChecks("/health")` |
+| `PaymentApi.csproj` | Pacote `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore 8.x` adicionado |
+
+**Comportamento**
+
+| Cenário | Resposta |
+|---|---|
+| Banco acessível | `200 OK` — corpo: `Healthy` |
+| Banco inacessível | `503 Service Unavailable` — corpo: `Unhealthy` |
+
+**Por que `AddDbContextCheck`?** Verifica se o `AppDbContext` consegue conectar ao SQL Server. É a checagem mais relevante para esta API, pois sem banco nenhum endpoint funciona.
+
+---
+
+### Resultado: ✅ 29/29 testes aprovados · 0 erros · 0 avisos
+
+### Commits
+
+- [x] `99f239e` — `feat: add pagination, EF Core migrations and health check endpoint` (01/05/2026 às 22:30)
+
+### Push realizado: ⏳ (pendente)
