@@ -11,7 +11,7 @@
 |---|---|
 | Repositório Git local | ✅ Inicializado (`main`) |
 | Remote GitHub | ✅ Configurado (`MarvadsBR/payment-api_marvdev`) |
-| Último commit local | `99f239e` — `feat: add pagination, EF Core migrations and health check endpoint` (01/05/2026) |
+| Último commit local | `a817e8d` — `docs: registrar sessao 9 no DIARIO - ordenacao configuravel` (01/05/2026) |
 | Push para GitHub | ✅ **Realizado em 01/05/2026** |
 
 ---
@@ -434,6 +434,7 @@ Consultadas as páginas de releases oficiais no GitHub:
 - [x] ~~GitHub Actions CI Pipeline~~ — resolvido em 01/05/2026 às 21:00
 - [x] ~~Warning de depreciação Node.js 20 no CI~~ — corrigido definitivamente em 01/05/2026 às 22:00
 - [x] ~~Ordenação configurável na paginação de pagamentos~~ — resolvido em 01/05/2026 às 23:10
+- [x] ~~Uso de cURL no PowerShell com payload JSON quebrando parse~~ — documentado e resolvido em 02/05/2026 às 00:30
 
 ### 🟡 Próximas funcionalidades (por prioridade)
 
@@ -443,7 +444,7 @@ Consultadas as páginas de releases oficiais no GitHub:
 
 ---
 
-*Última atualização: 01/05/2026 às 23:10*
+*Última atualização: 02/05/2026 às 00:30*
 
 ---
 
@@ -596,3 +597,39 @@ Evolução do endpoint `GET /api/payments` para suportar ordenação dinâmica m
 - [x] `7e2352e` — `feat: add configurable sorting to paginated payments endpoint` (01/05/2026 às 23:10)
 
 ### Push realizado: ✅
+
+---
+
+## Sessão 10 — 02/05/2026 às 00:30 · Manutenção de uso local
+
+### Problema observado
+
+Durante testes locais no PowerShell, o comando `curl.exe` para `POST /api/payments` retornou `400` com erro de parsing JSON:
+
+```json
+"'a' is an invalid start of a property name. Expected a '\"'."
+```
+
+Isso aconteceu por formatação/escape do payload JSON no shell, não por erro da API.
+
+### Ajustes realizados
+
+| Arquivo | Mudança |
+|---|---|
+| `README.md` | Adicionada seção com exemplos de `curl.exe` seguros para PowerShell usando here-string + `--data-raw` |
+| `README.md` | Adicionado exemplo recomendado com `ConvertTo-Json` para evitar problemas de escape |
+| `README.md` | Corrigida sintaxe multiline para PowerShell com crase (`` ` ``) em vez de `\` |
+| `README.md` | Atualizados comandos `docker-compose` -> `docker compose` |
+| `README.md` | Atualizada documentação para refletir `Migrate()` no startup e endpoint `/health` |
+| `docker-compose.yml` | Removido campo `version` obsoleto para eliminar warning do Compose V2 |
+| `scripts/manual-api-calls.ps1` | Novo script com fluxo manual completo usando `curl.exe` + `ConvertTo-Json` |
+
+### Resultado esperado após ajuste
+
+- `POST /api/payments` via PowerShell passa a funcionar sem erro de parsing JSON
+- `docker compose up --build` não exibe mais warning de atributo `version` obsoleto
+- Fluxo manual de testes pode ser executado via `./scripts/manual-api-calls.ps1`
+
+### Commit
+
+- [ ] Pendente de commit e push
