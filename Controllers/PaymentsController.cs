@@ -9,6 +9,20 @@ namespace PaymentApi.Controllers;
 [Produces("application/json")]
 public class PaymentsController : ControllerBase
 {
+    private static readonly HashSet<string> AllowedSortBy = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "createdAt",
+        "amount",
+        "status",
+        "method"
+    };
+
+    private static readonly HashSet<string> AllowedSortDir = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "asc",
+        "desc"
+    };
+
     private readonly IPaymentService _service;
 
     public PaymentsController(IPaymentService service)
@@ -22,13 +36,17 @@ public class PaymentsController : ControllerBase
     /// <param name="status">Optional status filter (Pending, Completed, Failed, Refunded).</param>
     /// <param name="page">Page number, 1-based. Default: 1.</param>
     /// <param name="pageSize">Items per page (1–100). Default: 10.</param>
+    /// <param name="sortBy">Sort field: createdAt, amount, status, method. Default: createdAt.</param>
+    /// <param name="sortDir">Sort direction: asc or desc. Default: desc.</param>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponseDto<PaymentResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? status,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string sortBy = "createdAt",
+        [FromQuery] string sortDir = "desc")
     {
         if (page < 1)
             return BadRequest(new { error = "'page' must be greater than or equal to 1." });
@@ -36,7 +54,13 @@ public class PaymentsController : ControllerBase
         if (pageSize < 1 || pageSize > 100)
             return BadRequest(new { error = "'pageSize' must be between 1 and 100." });
 
-        var result = await _service.GetAllAsync(status, page, pageSize);
+        if (!AllowedSortBy.Contains(sortBy))
+            return BadRequest(new { error = "'sortBy' must be one of: createdAt, amount, status, method." });
+
+        if (!AllowedSortDir.Contains(sortDir))
+            return BadRequest(new { error = "'sortDir' must be 'asc' or 'desc'." });
+
+        var result = await _service.GetAllAsync(status, page, pageSize, sortBy, sortDir);
         return Ok(result);
     }
 

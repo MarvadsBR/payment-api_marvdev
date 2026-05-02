@@ -63,13 +63,13 @@ public class PaymentsControllerTests
     {
         // ARRANGE
         var mock = new Mock<IPaymentService>();
-        mock.Setup(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()))
+        mock.Setup(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(SamplePaged(SampleResponse(), SampleResponse()));
 
         var controller = new PaymentsController(mock.Object);
 
         // ACT
-        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 10);
+        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         var ok = Assert.IsType<OkObjectResult>(actionResult);
@@ -86,11 +86,11 @@ public class PaymentsControllerTests
         var controller = new PaymentsController(mock.Object);
 
         // ACT
-        var actionResult = await controller.GetAll(status: null, page: 0, pageSize: 10);
+        var actionResult = await controller.GetAll(status: null, page: 0, pageSize: 10, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         Assert.IsType<BadRequestObjectResult>(actionResult);
-        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -101,11 +101,49 @@ public class PaymentsControllerTests
         var controller = new PaymentsController(mock.Object);
 
         // ACT
-        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 200);
+        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 200, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         Assert.IsType<BadRequestObjectResult>(actionResult);
-        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_InvalidSortBy_ReturnsBadRequest()
+    {
+        var mock = new Mock<IPaymentService>();
+        var controller = new PaymentsController(mock.Object);
+
+        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 10, sortBy: "foo", sortDir: "desc");
+
+        Assert.IsType<BadRequestObjectResult>(actionResult);
+        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_InvalidSortDir_ReturnsBadRequest()
+    {
+        var mock = new Mock<IPaymentService>();
+        var controller = new PaymentsController(mock.Object);
+
+        var actionResult = await controller.GetAll(status: null, page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "up");
+
+        Assert.IsType<BadRequestObjectResult>(actionResult);
+        mock.Verify(s => s.GetAllAsync(It.IsAny<string?>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_PassesSortingParametersToService()
+    {
+        var mock = new Mock<IPaymentService>();
+        mock.Setup(s => s.GetAllAsync("Pending", 2, 5, "amount", "asc"))
+            .ReturnsAsync(SamplePaged(SampleResponse()));
+
+        var controller = new PaymentsController(mock.Object);
+
+        await controller.GetAll(status: "Pending", page: 2, pageSize: 5, sortBy: "amount", sortDir: "asc");
+
+        mock.Verify(s => s.GetAllAsync("Pending", 2, 5, "amount", "asc"), Times.Once);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

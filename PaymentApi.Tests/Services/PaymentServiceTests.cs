@@ -63,7 +63,7 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT ─────────────────────────────────────────────────────────────────
-        var result = await service.GetAllAsync(status: null, page: 1, pageSize: 10);
+        var result = await service.GetAllAsync(status: null, page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT ──────────────────────────────────────────────────────────────
         Assert.Equal(2, result.TotalCount);
@@ -85,7 +85,7 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT
-        var result = await service.GetAllAsync(status: "Pending", page: 1, pageSize: 10);
+        var result = await service.GetAllAsync(status: "Pending", page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         // Apenas os 2 pagamentos Pending devem ser retornados.
@@ -108,7 +108,7 @@ public class PaymentServiceTests
 
         // ACT
         // "InvalidStatus" não existe no enum → Enum.TryParse falha → sem filtro.
-        var result = await service.GetAllAsync(status: "InvalidStatus", page: 1, pageSize: 10);
+        var result = await service.GetAllAsync(status: "InvalidStatus", page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         // Comportamento esperado: retorna tudo quando o filtro é inválido.
@@ -126,7 +126,7 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT — "completed" em minúsculas deve funcionar igual a "Completed"
-        var result = await service.GetAllAsync(status: "completed", page: 1, pageSize: 10);
+        var result = await service.GetAllAsync(status: "completed", page: 1, pageSize: 10, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         Assert.Equal(1, result.TotalCount);
@@ -344,7 +344,7 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT
-        var result = await service.GetAllAsync(status: null, page: 2, pageSize: 2);
+        var result = await service.GetAllAsync(status: null, page: 2, pageSize: 2, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         Assert.Equal(5, result.TotalCount);   // total real no banco
@@ -368,12 +368,56 @@ public class PaymentServiceTests
         await db.SaveChangesAsync();
 
         // ACT
-        var result = await service.GetAllAsync(status: null, page: 2, pageSize: 2);
+        var result = await service.GetAllAsync(status: null, page: 2, pageSize: 2, sortBy: "createdAt", sortDir: "desc");
 
         // ASSERT
         Assert.Single(result.Data);  // apenas 1 sobrou na última página
         Assert.False(result.HasNextPage);
         Assert.True(result.HasPreviousPage);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_SortByAmountAsc_ReturnsAscendingOrder()
+    {
+        // ARRANGE
+        using var db = DbContextFactory.Create(nameof(GetAllAsync_SortByAmountAsc_ReturnsAscendingOrder));
+        var service = new PaymentService(db);
+
+        db.Payments.AddRange(
+            new Payment { Description = "P1", Amount = 30, Currency = "BRL", Method = PaymentMethod.Pix },
+            new Payment { Description = "P2", Amount = 10, Currency = "BRL", Method = PaymentMethod.Pix },
+            new Payment { Description = "P3", Amount = 20, Currency = "BRL", Method = PaymentMethod.Pix }
+        );
+        await db.SaveChangesAsync();
+
+        // ACT
+        var result = await service.GetAllAsync(status: null, page: 1, pageSize: 10, sortBy: "amount", sortDir: "asc");
+
+        // ASSERT
+        var amounts = result.Data.Select(p => p.Amount).ToList();
+        Assert.Equal([10m, 20m, 30m], amounts);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_SortByAmountDesc_ReturnsDescendingOrder()
+    {
+        // ARRANGE
+        using var db = DbContextFactory.Create(nameof(GetAllAsync_SortByAmountDesc_ReturnsDescendingOrder));
+        var service = new PaymentService(db);
+
+        db.Payments.AddRange(
+            new Payment { Description = "P1", Amount = 30, Currency = "BRL", Method = PaymentMethod.Pix },
+            new Payment { Description = "P2", Amount = 10, Currency = "BRL", Method = PaymentMethod.Pix },
+            new Payment { Description = "P3", Amount = 20, Currency = "BRL", Method = PaymentMethod.Pix }
+        );
+        await db.SaveChangesAsync();
+
+        // ACT
+        var result = await service.GetAllAsync(status: null, page: 1, pageSize: 10, sortBy: "amount", sortDir: "desc");
+
+        // ASSERT
+        var amounts = result.Data.Select(p => p.Amount).ToList();
+        Assert.Equal([30m, 20m, 10m], amounts);
     }
 
     /// <summary>

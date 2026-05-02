@@ -14,7 +14,7 @@ public class PaymentService : IPaymentService
         _db = db;
     }
 
-    public async Task<PagedResponseDto<PaymentResponseDto>> GetAllAsync(string? status, int page, int pageSize)
+    public async Task<PagedResponseDto<PaymentResponseDto>> GetAllAsync(string? status, int page, int pageSize, string sortBy, string sortDir)
     {
         var query = _db.Payments.AsQueryable();
 
@@ -26,8 +26,9 @@ public class PaymentService : IPaymentService
 
         var totalCount = await query.CountAsync();
 
+        query = ApplyOrdering(query, sortBy, sortDir);
+
         var data = await query
-            .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => ToDto(p))
@@ -88,6 +89,30 @@ public class PaymentService : IPaymentService
         await _db.SaveChangesAsync();
 
         return DeleteResult.Success;
+    }
+
+    private static IQueryable<Payment> ApplyOrdering(IQueryable<Payment> query, string sortBy, string sortDir)
+    {
+        var desc = sortDir.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return sortBy.ToLowerInvariant() switch
+        {
+            "amount" => desc
+                ? query.OrderByDescending(p => p.Amount).ThenByDescending(p => p.CreatedAt)
+                : query.OrderBy(p => p.Amount).ThenByDescending(p => p.CreatedAt),
+
+            "status" => desc
+                ? query.OrderByDescending(p => p.Status).ThenByDescending(p => p.CreatedAt)
+                : query.OrderBy(p => p.Status).ThenByDescending(p => p.CreatedAt),
+
+            "method" => desc
+                ? query.OrderByDescending(p => p.Method).ThenByDescending(p => p.CreatedAt)
+                : query.OrderBy(p => p.Method).ThenByDescending(p => p.CreatedAt),
+
+            _ => desc
+                ? query.OrderByDescending(p => p.CreatedAt)
+                : query.OrderBy(p => p.CreatedAt)
+        };
     }
 
     private static PaymentResponseDto ToDto(Payment p) => new()
