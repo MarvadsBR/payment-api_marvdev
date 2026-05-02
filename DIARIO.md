@@ -422,7 +422,7 @@ Consultadas as páginas de releases oficiais no GitHub:
 
 ---
 
-## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 22:00)
+## Pendências e Próximas Funcionalidades (atualizado em 01/05/2026 às 23:10)
 
 ### ✅ Resolvido
 
@@ -433,6 +433,7 @@ Consultadas as páginas de releases oficiais no GitHub:
 - [x] ~~Push para o GitHub~~ — realizado em 01/05/2026
 - [x] ~~GitHub Actions CI Pipeline~~ — resolvido em 01/05/2026 às 21:00
 - [x] ~~Warning de depreciação Node.js 20 no CI~~ — corrigido definitivamente em 01/05/2026 às 22:00
+- [x] ~~Ordenação configurável na paginação de pagamentos~~ — resolvido em 01/05/2026 às 23:10
 
 ### 🟡 Próximas funcionalidades (por prioridade)
 
@@ -442,7 +443,7 @@ Consultadas as páginas de releases oficiais no GitHub:
 
 ---
 
-*Última atualização: 01/05/2026 às 22:30*
+*Última atualização: 01/05/2026 às 23:10*
 
 ---
 
@@ -552,5 +553,46 @@ Endpoints de health check são padrão em sistemas modernos para sinalizar ao or
 ### Commits
 
 - [x] `99f239e` — `feat: add pagination, EF Core migrations and health check endpoint` (01/05/2026 às 22:30)
+
+### Push realizado: ✅
+
+---
+
+## Sessão 9 — 01/05/2026 às 23:10 · Commit `7e2352e`
+
+### O que foi implementado: Ordenação configurável na paginação
+
+Evolução do endpoint `GET /api/payments` para suportar ordenação dinâmica mantendo paginação e filtros existentes.
+
+### Novos parâmetros de query
+
+| Parâmetro | Valores | Padrão | Regra |
+|---|---|---|---|
+| `sortBy` | `createdAt`, `amount`, `status`, `method` | `createdAt` | qualquer outro valor retorna `400` |
+| `sortDir` | `asc`, `desc` | `desc` | qualquer outro valor retorna `400` |
+
+### Alterações de código
+
+| Arquivo | Mudança |
+|---|---|
+| `Controllers/PaymentsController.cs` | Aceita `sortBy` e `sortDir` e valida ambos antes de chamar o service |
+| `Services/IPaymentService.cs` | Assinatura de `GetAllAsync` expandida para receber ordenação |
+| `Services/PaymentService.cs` | Método `ApplyOrdering` com switch para ordenar por campo e direção antes do `Skip/Take` |
+
+### Cobertura de testes adicionada/ajustada
+
+| Arquivo | Novos cenários |
+|---|---|
+| `PaymentApi.Tests/Controllers/PaymentsControllerTests.cs` | `GetAll_InvalidSortBy_ReturnsBadRequest`, `GetAll_InvalidSortDir_ReturnsBadRequest`, `GetAll_PassesSortingParametersToService` |
+| `PaymentApi.Tests/Services/PaymentServiceTests.cs` | `GetAllAsync_SortByAmountAsc_ReturnsAscendingOrder`, `GetAllAsync_SortByAmountDesc_ReturnsDescendingOrder` |
+
+### Resultado
+
+- Build: ✅ 0 erros, 0 avisos
+- Testes: ✅ 34/34 aprovados
+
+### Commits
+
+- [x] `7e2352e` — `feat: add configurable sorting to paginated payments endpoint` (01/05/2026 às 23:10)
 
 ### Push realizado: ✅
